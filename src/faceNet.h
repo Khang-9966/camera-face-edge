@@ -18,6 +18,7 @@
 #include <l2norm_helper.h>
 #include "common.h"
 #include "pBox.h"
+#include "NGT/Index.h"
 
 using namespace nvinfer1;
 using namespace nvuffparser;
@@ -45,7 +46,14 @@ class FaceNetClassifier
         void addNewFace(cv::Mat &image, std::vector<struct Bbox> outputBbox);
         void resetVariables();
 
+
+
     private:
+       //ONNG
+	NGT::Index              *onng_index;
+        NGT::Property	        property;
+       //////////////////////
+
         static int m_classCount;
         int m_INPUT_C;
         int m_INPUT_H;

@@ -1,7 +1,18 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 set(PROJECT_NAME mtcnn_facenet_cpp_tensorRT)
 project(${PROJECT_NAME})# LANGUAGES CXX CUDA)
+###### ONNG
+set(PROJECT_BINARY_DIR /home/ai/ai/NGT-1.12.2/samples/l2-uint8/build)
+set(PROJECT_BINARY_DIR /home/ai/ai/NGT-1.12.2/samples/l2-uint8)
 
+include_directories("${PROJECT_BINARY_DIR}/lib")
+link_directories("${PROJECT_SOURCE_DIR}/lib/NGT")
+
+#add_executable(l2-uint8 l2-uint8.cpp)
+#add_dependencies(l2-uint8 ngt)
+#target_link_libraries(l2-uint8 ngt pthread)
+
+##############################
 set (CMAKE_CXX_STANDARD 11)
 
 # OpenCV
@@ -76,4 +87,6 @@ target_link_libraries(${PROJECT_NAME}
   trt_l2norm_helper
   ${TENSORRT_LIBRARY}
 )
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ngt pthread)
+
+

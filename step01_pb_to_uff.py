@@ -7,7 +7,7 @@ if __name__ == "__main__":
   # USER DEFINED VALUES
   output_nodes = ["embeddings"]
   input_node   = "input"
-  pb_file      = "./facenet.pb"
+  pb_file      = "facenet.pb"
   uff_file     = "./facenetModels/facenet.uff"
   # END USER DEFINED VALUES
 

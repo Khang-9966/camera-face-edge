@@ -9,7 +9,7 @@
 #include "videoStreamer.h"
 #include "network.h"
 #include "mtcnn.h"
-
+#include "NGT/Index.h"
 // Uncomment to print timings in milliseconds
 // #define LOG_TIMES
 
@@ -18,7 +18,8 @@ using namespace nvuffparser;
 
 
 int main()
-{
+{   
+    
     Logger gLogger = Logger();
     // Register default TRT plugins (e.g. LRelu_TRT)
     if (!initLibNvInferPlugins(&gLogger, "")) { return 1; }
@@ -34,8 +35,8 @@ int main()
     int videoFrameWidth = 640;
     int videoFrameHeight = 480;
     int maxFacesPerScene = 5;
-    float knownPersonThreshold = 1.;
-    bool isCSICam = true;
+    float knownPersonThreshold = 0.2;
+    bool isCSICam = false;
 
     // init facenet
     FaceNetClassifier faceNet = FaceNetClassifier(gLogger, dtype, uffFile, engineFile, batchSize, serializeEngine,
@@ -50,11 +51,13 @@ int main()
 
     //init Bbox and allocate memory for "maxFacesPerScene" faces per scene
     std::vector<struct Bbox> outputBbox;
+    std::cout << "============================================================================= : ";
     outputBbox.reserve(maxFacesPerScene);
 
     // get embeddings of known faces
     std::vector<struct Paths> paths;
     cv::Mat image;
+    
     getFilePaths("../imgs", paths);
     for(int i=0; i < paths.size(); i++) {
         loadInputImage(paths[i].absPath, image, videoFrameWidth, videoFrameHeight);
@@ -65,7 +68,7 @@ int main()
         faceNet.resetVariables();
     }
     outputBbox.clear();
-
+ 
     // loop over frames with inference
     auto globalTimeStart = chrono::steady_clock::now();
     while (true) {
@@ -85,7 +88,7 @@ int main()
         faceNet.featureMatching(frame);
         auto endFeatM = chrono::steady_clock::now();
         faceNet.resetVariables();
-        
+
         cv::imshow("VideoSource", frame);
         nbFrames++;
         outputBbox.clear();

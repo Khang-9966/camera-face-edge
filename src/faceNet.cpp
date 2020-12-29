@@ -1,11 +1,58 @@
 #include "faceNet.h"
 
+
 int FaceNetClassifier::m_classCount = 0;
 
 FaceNetClassifier::FaceNetClassifier
 (Logger gLogger, DataType dtype, const string uffFile, const string engineFile, int batchSize, bool serializeEngine,
         float knownPersonThreshold, int maxFacesPerScene, int frameWidth, int frameHeight) {
+    /// ONNG
+    string indexPath	= "1m_onng";
+    string queryFile	= "foo.tsv";
 
+    onng_index = new NGT::Index(indexPath);
+
+    property.dimension		= 128;
+    property.objectType		= NGT::ObjectSpace::ObjectType::Float;
+    property.distanceType	= NGT::Index::Property::DistanceType::DistanceTypeCosine;
+    onng_index->getProperty(property);
+    ifstream		is(queryFile);
+    string		line;
+    vector<float>	query;
+    getline(is, line);
+    stringstream	linestream(line);
+    while (!linestream.eof()) {
+	  float value;
+	  linestream >> value;
+	  //std::cout << value << endl  ;
+	  query.push_back(value);
+	}
+
+    query.resize(property.dimension);
+    cout << "Query : ";
+    for (size_t i = 0; i < 5; i++) {
+        cout << static_cast<float>(query[i]) << " ";
+    }
+    cout << "...";
+
+    NGT::SearchQuery		sc(query);
+    NGT::ObjectDistances	objects;
+    sc.setResults(&objects);
+    sc.setSize(10);
+    sc.setEpsilon(0.1);
+
+    onng_index->search(sc);
+    cout << endl << "Rank\tID\tDistance" << std::showbase << endl;
+    for (size_t i = 0; i < objects.size(); i++) {
+	cout << i + 1 << "\t" << objects[i].id << "\t" << objects[i].distance << "\t: ";
+	NGT::ObjectSpace &objectSpace = onng_index->getObjectSpace();
+	uint8_t *object = static_cast<uint8_t*>(objectSpace.getObject(objects[i].id));
+	for (size_t idx = 0; idx < 5; idx++) {
+	  cout << static_cast<int>(object[idx]) << " ";
+	}
+     cout << "..." << endl;
+     }
+    /////////////////////////////////////////////////////////////////////
     m_INPUT_C = static_cast<const int>(3);
     m_INPUT_H = static_cast<const int>(160);
     m_INPUT_W = static_cast<const int>(160);
@@ -208,32 +255,48 @@ void FaceNetClassifier::forward(cv::Mat frame, std::vector<struct Bbox> outputBb
 void FaceNetClassifier::featureMatching(cv::Mat &image) {
 
     for(int i = 0; i < (m_embeddings.size()/128); i++) {
-        double minDistance = 10.* m_knownPersonThresh;
+        double minDistance =  m_knownPersonThresh;
         float currDistance = 0.;
         int winner = -1;
-        for (int j = 0; j < m_knownFaces.size(); j++) {
-            std:vector<float> currEmbedding(128);
-            std::copy_n(m_embeddings.begin()+(i*128), 128, currEmbedding.begin());
-            currDistance = vectors_distance(currEmbedding, m_knownFaces[j].embeddedFace);
-            // printf("The distance to %s is %.10f \n", m_knownFaces[j].className.c_str(), currDistance);
-            // if ((currDistance < m_knownPersonThresh) && (currDistance < minDistance)) {
-            if (currDistance < minDistance) {
-                    minDistance = currDistance;
-                    winner = j;
-            }
-            currEmbedding.clear();
-        }
+
+        std:vector<float> currEmbedding(128);
+        std::copy_n(m_embeddings.begin()+(i*128), 128, currEmbedding.begin());
+	///////// ONNG SEARCH	
+
+	NGT::SearchQuery		sc(currEmbedding);
+	NGT::ObjectDistances	objects;
+	sc.setResults(&objects);
+	sc.setSize(5);
+	sc.setEpsilon(0.1);
+	onng_index->search(sc);
+
+	//cout << endl << "Rank\tID\tDistance" << std::showbase << endl;
+	//for (size_t i = 0; i < objects.size(); i++) {
+	//	cout << i + 1 << "\t" << objects[i].id << "\t" << objects[i].distance << "\t: ";
+		/// put name
+		//NGT::ObjectSpace &objectSpace = onng_index->getObjectSpace();
+		//float *object = static_cast<float*>(objectSpace.getObject(objects[i].id));
+		//for (size_t idx = 0; idx < 5; idx++) {
+		//  cout << object[idx] << " ";
+		//}
+	//	cout << endl;
+	//}
+
+	currEmbedding.clear();
+
         float fontScaler = static_cast<float>(m_croppedFaces[i].x2 - m_croppedFaces[i].x1)/static_cast<float>(m_frameWidth);
         cv::rectangle(image, cv::Point(m_croppedFaces[i].y1, m_croppedFaces[i].x1), cv::Point(m_croppedFaces[i].y2, m_croppedFaces[i].x2), 
                         cv::Scalar(0,0,255), 2,8,0);
-        if (minDistance <= m_knownPersonThresh) {
-            cv::putText(image, m_knownFaces[winner].className, cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
-                    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler,  cv::Scalar(0,0,255,255), 1);
-        }
-        else if (minDistance > m_knownPersonThresh || winner == -1){
-            cv::putText(image, "New Person", cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
-                    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler ,  cv::Scalar(0,0,255,255), 1);
-        }
+
+	if ( objects[0].distance <= m_knownPersonThresh) {
+	    cv::putText(image, std::to_string(objects[0].id) , cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
+		    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler,  cv::Scalar(0,255,0,255), 1);
+	}
+	//else if (objects[0].distance > m_knownPersonThresh || winner == -1){
+	//    cv::putText(image, "New Person", cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
+	//	    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler ,  cv::Scalar(0,0,255,255), 1);
+	//}
+
     }
 }
 

@@ -25,6 +25,32 @@ This master branch now uses Jetpack 4.4, so dependencies have slightly changed a
 In case you would like to use older versions of Jetpack there is a tag jp4.2.2, that can links to the older implementation.
 
 ## Installation
+#### 0. Install ONNG library
+Clone git from https://github.com/yahoojapan/NGT build with sudo permission:
+      
+      $ unzip NGT-x.x.x.zip
+      $ cd NGT-x.x.x
+      $ mkdir build
+      $ cd build
+      $ cmake ..
+      $ make
+      $ make install
+      $ ldconfig /usr/local/lib
+
+If want to use Python:
+
+```
+pip3 install ngt
+```
+
+```
+pip3 install pybind11
+pip3 install numpy
+cd NGT_ROOT/python
+python3 setup.py sdist
+pip3 install dist/ngt-x.x.x.tar.gz
+```
+
 #### 1. Install Cuda, CudNN, TensorRT, and TensorFlow for Python 
 You can check [NVIDIA website](https://developer.nvidia.com/) for help.
 Installation procedures are very well documented.<br><br>**If you are

@@ -20,6 +20,14 @@
 #include "pBox.h"
 #include "NGT/Index.h"
 
+#include <stdio.h>
+#include <time.h>
+#include <fstream>  
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 using namespace nvinfer1;
 using namespace nvuffparser;
 
@@ -45,15 +53,17 @@ class FaceNetClassifier
         void featureMatching(cv::Mat &image);
         void addNewFace(cv::Mat &image, std::vector<struct Bbox> outputBbox);
         void resetVariables();
-
-
+        const std::string currentDateTime(); 
+  
+       
 
     private:
        //ONNG
 	NGT::Index              *onng_index;
         NGT::Property	        property;
        //////////////////////
-
+      	int face_count ;
+        string camera_id;
         static int m_classCount;
         int m_INPUT_C;
         int m_INPUT_H;

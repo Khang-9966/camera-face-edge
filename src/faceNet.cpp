@@ -7,6 +7,7 @@ FaceNetClassifier::FaceNetClassifier
 (Logger gLogger, DataType dtype, const string uffFile, const string engineFile, int batchSize, bool serializeEngine,
         float knownPersonThreshold, int maxFacesPerScene, int frameWidth, int frameHeight) {
     /// ONNG
+    cout << "======================= LOAD ONNG AND TEST ONE VECTOR=========================" << endl;
     string indexPath	= "1m_onng";
     string queryFile	= "foo.tsv";
 
@@ -52,7 +53,14 @@ FaceNetClassifier::FaceNetClassifier
 	}
      cout << "..." << endl;
      }
+
+  cout << "======================= LOAD ONNG SUCCESSED=========================" << endl;
+    ///////////////////////////////// CLEAR TEXT FILE ///////////////////////////////
+    std::ofstream outfile ("test.txt", ios::out | ios::trunc);
+    outfile<<"";
+    outfile.close();
     /////////////////////////////////////////////////////////////////////
+    face_count = 0;
     m_INPUT_C = static_cast<const int>(3);
     m_INPUT_H = static_cast<const int>(160);
     m_INPUT_W = static_cast<const int>(160);
@@ -68,12 +76,23 @@ FaceNetClassifier::FaceNetClassifier
     m_croppedFaces.reserve(maxFacesPerScene);
     m_embeddings.reserve(128);
     m_knownPersonThresh = knownPersonThreshold;
-
+    camera_id = "0";
     // load engine from .engine file or create new engine
     this->createOrLoadEngine();
+    cout << "currentDateTime()===================="  << this->currentDateTime() << endl;
 }
 
+const std::string FaceNetClassifier::currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
 
+    return buf;
+}
 void FaceNetClassifier::createOrLoadEngine() {
     if(fileExists(m_engineFile)) {
         std::vector<char> trtModelStream_;
@@ -253,8 +272,10 @@ void FaceNetClassifier::forward(cv::Mat frame, std::vector<struct Bbox> outputBb
 }
 
 void FaceNetClassifier::featureMatching(cv::Mat &image) {
-
+    std::ofstream outfile ("test.txt",fstream::app);
+    
     for(int i = 0; i < (m_embeddings.size()/128); i++) {
+        std::string list_id;
         double minDistance =  m_knownPersonThresh;
         float currDistance = 0.;
         int winner = -1;
@@ -270,34 +291,35 @@ void FaceNetClassifier::featureMatching(cv::Mat &image) {
 	sc.setEpsilon(0.1);
 	onng_index->search(sc);
 
-	//cout << endl << "Rank\tID\tDistance" << std::showbase << endl;
-	//for (size_t i = 0; i < objects.size(); i++) {
-	//	cout << i + 1 << "\t" << objects[i].id << "\t" << objects[i].distance << "\t: ";
-		/// put name
-		//NGT::ObjectSpace &objectSpace = onng_index->getObjectSpace();
-		//float *object = static_cast<float*>(objectSpace.getObject(objects[i].id));
-		//for (size_t idx = 0; idx < 5; idx++) {
-		//  cout << object[idx] << " ";
-		//}
-	//	cout << endl;
-	//}
-
+	//out << endl << "Rank\tID\tDistance" << std::showbase << endl;
+	for (size_t i = 0; i < objects.size(); i++) {
+		if  ( objects[0].distance > m_knownPersonThresh ) break; 
+		list_id.append( std::to_string(objects[i].id) ) ;
+                list_id.append( "," ) ;
+		//	cout << i + 1 << "\t" << objects[i].id << "\t" << objects[i].distance << "\t: ";
+			/// put name
+			//NGT::ObjectSpace &objectSpace = onng_index->getObjectSpace();
+			//float *object = static_cast<float*>(objectSpace.getObject(objects[i].id));
+			//for (size_t idx = 0; idx < 5; idx++) {
+			//  cout << object[idx] << " ";
+			//}
+		//	cout << endl;
+	}
+	
 	currEmbedding.clear();
-
         float fontScaler = static_cast<float>(m_croppedFaces[i].x2 - m_croppedFaces[i].x1)/static_cast<float>(m_frameWidth);
         cv::rectangle(image, cv::Point(m_croppedFaces[i].y1, m_croppedFaces[i].x1), cv::Point(m_croppedFaces[i].y2, m_croppedFaces[i].x2), 
                         cv::Scalar(0,0,255), 2,8,0);
 
 	if ( objects[0].distance <= m_knownPersonThresh) {
+           face_count = face_count + 1;
+  	    outfile << face_count << " " << currentDateTime() << " " << camera_id << " " << list_id << " " << std::endl;
+
 	    cv::putText(image, std::to_string(objects[0].id) , cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
 		    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler,  cv::Scalar(0,255,0,255), 1);
 	}
-	//else if (objects[0].distance > m_knownPersonThresh || winner == -1){
-	//    cv::putText(image, "New Person", cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
-	//	    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler ,  cv::Scalar(0,0,255,255), 1);
-	//}
-
     }
+    outfile.close();
 }
 
 void FaceNetClassifier::addNewFace(cv::Mat &image, std::vector<struct Bbox> outputBbox) {

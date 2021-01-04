@@ -8,7 +8,7 @@ FaceNetClassifier::FaceNetClassifier
         float knownPersonThreshold, int maxFacesPerScene, int frameWidth, int frameHeight) {
     /// ONNG
     cout << "======================= LOAD ONNG AND TEST ONE VECTOR=========================" << endl;
-    string indexPath	= "1m_onng";
+    string indexPath	= "index_onng_1m";
     string queryFile	= "foo.tsv";
 
     onng_index = new NGT::Index(indexPath);
@@ -288,7 +288,7 @@ void FaceNetClassifier::featureMatching(cv::Mat &image) {
 	NGT::ObjectDistances	objects;
 	sc.setResults(&objects);
 	sc.setSize(5);
-	sc.setEpsilon(0.1);
+	sc.setEpsilon(0.3);
 	onng_index->search(sc);
 
 	//out << endl << "Rank\tID\tDistance" << std::showbase << endl;

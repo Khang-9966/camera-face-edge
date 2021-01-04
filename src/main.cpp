@@ -35,7 +35,7 @@ int main()
     int videoFrameWidth = 640;
     int videoFrameHeight = 480;
     int maxFacesPerScene = 5;
-    float knownPersonThreshold = 0.2;
+    float knownPersonThreshold = 0.15;
     bool isCSICam = false;
 
     // init facenet

@@ -57,7 +57,6 @@ int main()
     // get embeddings of known faces
     std::vector<struct Paths> paths;
     cv::Mat image;
-    
     getFilePaths("../imgs", paths);
     for(int i=0; i < paths.size(); i++) {
         loadInputImage(paths[i].absPath, image, videoFrameWidth, videoFrameHeight);

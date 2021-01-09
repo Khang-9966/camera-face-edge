@@ -41,7 +41,7 @@ FaceNetClassifier::FaceNetClassifier
     sc.setResults(&objects);
     sc.setSize(10);
     sc.setEpsilon(0.1);
-
+	
     onng_index->search(sc);
     cout << endl << "Rank\tID\tDistance" << std::showbase << endl;
     for (size_t i = 0; i < objects.size(); i++) {
@@ -90,9 +90,9 @@ const std::string FaceNetClassifier::currentDateTime() {
     // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
     // for more information about date/time format
     strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
-
     return buf;
 }
+
 void FaceNetClassifier::createOrLoadEngine() {
     if(fileExists(m_engineFile)) {
         std::vector<char> trtModelStream_;
@@ -236,7 +236,7 @@ void FaceNetClassifier::doInference(float* inputData, float* output) {
     m_context->enqueue(m_batchSize, &buffers[0], stream, nullptr);
     CHECK(cudaMemcpyAsync(output, buffers[outputIndex], m_batchSize * size_of_single_output, cudaMemcpyDeviceToHost, stream));
     cudaStreamSynchronize(stream);
-
+    
     // Release the stream and the buffers
     cudaStreamDestroy(stream);
     CHECK(cudaFree(buffers[inputIndex]));
@@ -290,7 +290,7 @@ void FaceNetClassifier::featureMatching(cv::Mat &image) {
 	sc.setSize(5);
 	sc.setEpsilon(0.3);
 	onng_index->search(sc);
-
+        
 	//out << endl << "Rank\tID\tDistance" << std::showbase << endl;
 	for (size_t i = 0; i < objects.size(); i++) {
 		if  ( objects[0].distance > m_knownPersonThresh ) break; 
@@ -305,16 +305,22 @@ void FaceNetClassifier::featureMatching(cv::Mat &image) {
 			//}
 		//	cout << endl;
 	}
-	
+
 	currEmbedding.clear();
         float fontScaler = static_cast<float>(m_croppedFaces[i].x2 - m_croppedFaces[i].x1)/static_cast<float>(m_frameWidth);
         cv::rectangle(image, cv::Point(m_croppedFaces[i].y1, m_croppedFaces[i].x1), cv::Point(m_croppedFaces[i].y2, m_croppedFaces[i].x2), 
                         cv::Scalar(0,0,255), 2,8,0);
-
+        
 	if ( objects[0].distance <= m_knownPersonThresh) {
            face_count = face_count + 1;
   	    outfile << face_count << " " << currentDateTime() << " " << camera_id << " " << list_id << " " << std::endl;
-
+            /////////////// save image
+            cv::Mat cropped_image = image(cv::Rect(cv::Point(m_croppedFaces[i].y1, m_croppedFaces[i].x1), cv::Point(m_croppedFaces[i].y2, m_croppedFaces[i].x2)));
+            string filePath = "../send_imgs/";
+            filePath.append(std::to_string( face_count ));
+            filePath.append(".jpg");
+            cv::imwrite( filePath, cropped_image );
+            //////////////////////////
 	    cv::putText(image, std::to_string(objects[0].id) , cv::Point(m_croppedFaces[i].y1+2, m_croppedFaces[i].x2-3),
 		    cv::FONT_HERSHEY_DUPLEX, 0.1 + 2*fontScaler,  cv::Scalar(0,255,0,255), 1);
 	}

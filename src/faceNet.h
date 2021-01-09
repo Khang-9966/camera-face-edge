@@ -27,6 +27,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <list>
+#include <tuple>
 
 using namespace nvinfer1;
 using namespace nvuffparser;
@@ -84,6 +86,8 @@ class FaceNetClassifier
         // std::vector<cv::Mat> m_croppedFaces;
         std::vector<struct CroppedFace> m_croppedFaces;
         float m_knownPersonThresh;
+       
+        std::list< std::tuple< int,  std::chrono::steady_clock::time_point  >  > id_temp_list;
 };
 
 float vectors_distance(const std::vector<float>& a, const std::vector<float>& b);

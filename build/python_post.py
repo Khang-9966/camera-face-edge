@@ -3,7 +3,7 @@ import requests
 import cv2
 import base64
 f = open("test.txt", "r")
-url = 'http://172.16.1.107:8080/v1/events'
+url = 'http://172.16.1.111:8080/v1/events'
 
 
 def read_text_file(text_name):
@@ -24,22 +24,27 @@ def post_noti(base64Image,timestamp,cameraid,vectorID):
     x = requests.post(url, data = myobj)
     print(x.status_code, x.reason)
 
-def check_recent(id_, delta_ms_thres):
+def check_recent(vectorID, delta_s_thres):
     global time_temp_id_list
-    if id_ in time_temp_id_list:
-        delta_time = time.time() - time_temp_id_list[id_]
+    print(time_temp_id_list)
+    if vectorID in time_temp_id_list:
+        delta_time = time.time() - time_temp_id_list[vectorID]
         print(delta_time)
-        if delta_time >= delta_ms_thres:
-            time_temp_id_list[id_] = time.time()
+        if delta_time >= delta_s_thres:
+            print("hihih")
+            time_temp_id_list[vectorID] = time.time()
             return True
         else:
             return False
+    else:
+        time_temp_id_list[vectorID] = time.time()
+        return True
 
 
 old_len = 0
 old_id = 0
 time_temp_id_list = {}
-RECENT_TIME_THRES = 1000
+RECENT_TIME_THRES = 5
 while True:
     new_text_file = read_text_file("test.txt")
     if old_len != len(new_text_file):
@@ -52,7 +57,8 @@ while True:
                 timestamp = split_text[1] + " " + split_text[2]
                 cameraid = split_text[3]
                 vectorID = split_text[4]
-                if check_recent(old_id, RECENT_TIME_THRES ):
+                if check_recent(vectorID.split(",")[0], RECENT_TIME_THRES ):
+                    print("=========== send noti =======================")
                     base64Image = send_image_to_base64(split_text[0])
                     post_noti(base64Image,timestamp,cameraid,vectorID)
         old_len = len(new_text_file)

@@ -8,7 +8,7 @@ FaceNetClassifier::FaceNetClassifier
         float knownPersonThreshold, int maxFacesPerScene, int frameWidth, int frameHeight) {
     /// ONNG
     cout << "======================= LOAD ONNG AND TEST ONE VECTOR=========================" << endl;
-    string indexPath	= "index_onng_1m";
+    string indexPath	= "index_onng_1m_1tr50";
     string queryFile	= "foo.tsv";
 
     onng_index = new NGT::Index(indexPath);
